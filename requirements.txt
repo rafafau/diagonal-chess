@@ -1,5 +1,5 @@
-python==3.10.8
+python==3.11.6
 numpy
-tensorflow
-pyqt5
+tensorflow=2.14.0
+pyqt6
 hashlib

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 
 import ai
 
@@ -186,7 +186,7 @@ def main():
     view = gui.PyChessUi()
     view.show()
     gui.PyChessCtrl(view=view)
-    sys.exit(pychess.exec_())
+    sys.exit(pychess.exec())
 
 
 if __name__ == '__main__':

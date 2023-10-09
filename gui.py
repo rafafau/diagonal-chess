@@ -1,13 +1,8 @@
 import time
 from functools import partial
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QGridLayout, QLabel, QComboBox
-from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QPushButton
-from PyQt5.QtWidgets import QVBoxLayout
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtWidgets import QMessageBox
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget, QComboBox, QMessageBox, QPushButton, QGridLayout, QLineEdit, QMainWindow
 
 import ai
 import main
@@ -18,6 +13,7 @@ class PyChessUi(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Diagonal Chess AI")
+        self.resize(200, 300)
         self.generalLayout = QVBoxLayout()
         self._centralWidget = QWidget(self)
         self.setCentralWidget(self._centralWidget)
@@ -37,7 +33,7 @@ class PyChessUi(QMainWindow):
         labels = {"Białe": (0, 0), "Czarne": (0, 1)}
         for labelText, pos in labels.items():
             self.labels[labelText] = QLabel(labelText)
-            self.labels[labelText].setAlignment(Qt.AlignCenter)
+            self.labels[labelText].setAlignment(Qt.AlignmentFlag.AlignCenter)
             labelsLayout.addWidget(self.labels[labelText], pos[0], pos[1])
         self.generalLayout.addLayout(labelsLayout)
 
@@ -67,7 +63,7 @@ class PyChessUi(QMainWindow):
 
     def _createResetButton(self):
         self.reset_button = QPushButton('Nowa Gra', self)
-        self.reset_button.clicked.connect(self.new_game) 
+        self.reset_button.clicked.connect(self.new_game)
         self.generalLayout.addWidget(self.reset_button)
 
     def new_game(self):
@@ -76,10 +72,10 @@ class PyChessUi(QMainWindow):
 
     def show_endgame_message(self, message):
         msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
+        msg.setIcon(QMessageBox.Icon.Information)
         msg.setText(message)
         msg.setWindowTitle("Koniec gry")
-        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         retval = msg.exec_()
         
 
@@ -115,6 +111,7 @@ class PyChessUi(QMainWindow):
                 j += 1
             i += 1
 
+            buttonsLayout.setHorizontalSpacing(2)
             buttonsLayout.addWidget(self.buttons[btnText], pos[0], pos[1])
 
         # czarne pionki
@@ -243,17 +240,17 @@ class PyChessUi(QMainWindow):
         stats = {"Głębokość": (0, 0), "Czas": (0, 1)}
         for statsText, pos in stats.items():
             self.stats[statsText] = QLabel(statsText)
-            self.stats[statsText].setAlignment(Qt.AlignCenter)
+            self.stats[statsText].setAlignment(Qt.AlignmentFlag.AlignCenter)
             statsLayout.addWidget(self.stats[statsText], pos[0], pos[1])
         self.generalLayout.addLayout(statsLayout)
 
     def _createDisplayStats(self):
         self.max_depth = QLineEdit()
         self.max_depth.setReadOnly(True)
-        self.max_depth.setAlignment(Qt.AlignCenter)
+        self.max_depth.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.time = QLineEdit()
         self.time.setReadOnly(True)
-        self.time.setAlignment(Qt.AlignCenter)
+        self.time.setAlignment(Qt.AlignmentFlag.AlignCenter)
         box_stats_layout = QGridLayout()
         box_stats_layout.addWidget(self.max_depth, 0, 0)
         box_stats_layout.addWidget(self.time, 0, 1)
@@ -271,17 +268,17 @@ class PyChessUi(QMainWindow):
         stats = {"Punkty": (0, 0), "Sprawdzonych stanów": (0, 1)}
         for statsText, pos in stats.items():
             self.stats[statsText] = QLabel(statsText)
-            self.stats[statsText].setAlignment(Qt.AlignCenter)
+            self.stats[statsText].setAlignment(Qt.AlignmentFlag.AlignCenter)
             statsLayout2.addWidget(self.stats[statsText], pos[0], pos[1])
         self.generalLayout.addLayout(statsLayout2)
 
     def _createDisplayStats2(self):
         self.points = QLineEdit()
         self.points.setReadOnly(True)
-        self.points.setAlignment(Qt.AlignCenter)
+        self.points.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.moves = QLineEdit()
         self.moves.setReadOnly(True)
-        self.moves.setAlignment(Qt.AlignCenter)
+        self.moves.setAlignment(Qt.AlignmentFlag.AlignCenter)
         box_stats_layout2 = QGridLayout()
         box_stats_layout2.addWidget(self.points, 0, 0)
         box_stats_layout2.addWidget(self.moves, 0, 1)
