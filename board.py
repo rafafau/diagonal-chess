@@ -268,7 +268,7 @@ class Board:
                     key.append("0")
         key.append(str(depth))
         key = "".join(key)
-        return int(hashlib.sha256(key.encode('utf-8')).hexdigest(), 16) % 10**16
+        return int(hashlib.sha256(key.encode('utf-8')).hexdigest(), 16) % 10**18
     
     def get_hash_board_to_drawn(self, maximazing_player):
         count_pieces = self.get_count_of_pieces()

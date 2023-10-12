@@ -76,7 +76,7 @@ class PyChessUi(QMainWindow):
         msg.setText(message)
         msg.setWindowTitle("Koniec gry")
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        retval = msg.exec_()
+        retval = msg.exec()
         
 
     def _createBoard(self):

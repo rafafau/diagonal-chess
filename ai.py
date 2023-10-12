@@ -3,6 +3,7 @@ import numpy as np
 import pieces
 import main
 
+import sqlite3
 from tensorflow.keras import models
 
 class Heuristics:
@@ -77,13 +78,40 @@ deep = 3
 game_deep = 0
 max_deep = 0
 model = models.load_model('model.h5')
-hboard = {}
+
+# Create a SQLite database connection
+conn = sqlite3.connect('chessboard.db')
+cursor = conn.cursor()
+
+# Create a table to store chessboard positions and their scores
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS chessboard_positions (
+        position_hash TEXT PRIMARY KEY,
+        score INTEGER
+    )
+''')
+conn.commit()
+
+def store_position_hash(hash_board, score):
+    if score >= 100000 or score <= -100000:
+        return
+    else:
+        score = int(score)
+        cursor.execute('INSERT OR REPLACE INTO chessboard_positions (position_hash, score) VALUES (?, ?)', (hash_board, score))
+        conn.commit()
+
+def get_position_score(hash_board):
+    cursor.execute('SELECT score FROM chessboard_positions WHERE position_hash = ?', (hash_board,))
+    result = cursor.fetchone()
+    if result:
+        return int(result[0])
+    return None
 
 class AI:
 
     @staticmethod
     def get_ai_move(chessboard, color):
-        global count_moves, deep, game_deep, max_deep, hboard
+        global count_moves, deep, game_deep, max_deep
         count_moves = 0
         best_move = 0
         max_deep = deep
@@ -102,17 +130,17 @@ class AI:
                 copy = board.Board.clone(chessboard)
                 copy.perform_move(move)
                 hash_board = copy.get_hash_board(maximazing_player=True, depth=game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    if score > best_score:
-                        best_score = score
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    if cached_score > best_score:
+                        best_score = cached_score
                         best_move = move
                 else:
                     score = AI.alphabeta(copy, deep - 1, -np.inf, np.inf, False)
                     if score > best_score:
+                        store_position_hash(hash_board, score)    #dodatkowy
                         best_score = score
                         best_move = move
-
         else:
             best_score = np.Inf
             pieces_color = pieces.Piece.BLACK
@@ -127,28 +155,27 @@ class AI:
                 copy = board.Board.clone(chessboard)
                 copy.perform_move(move)
                 hash_board = copy.get_hash_board(maximazing_player=False, depth=game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    if score < best_score:
-                        best_score = score
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    if cached_score < best_score:
+                        best_score = cached_score
                         best_move = move
                 else:
                     score = AI.alphabeta(copy, deep - 1, -np.inf, np.inf, True)
                     if score < best_score:
+                        store_position_hash(hash_board, score)   #dodatkowy
                         best_score = score
                         best_move = move
 
         copy = board.Board.clone(chessboard)
         copy.perform_move(best_move)
         game_deep += 2
-        for h, h_value in list(hboard.items()):
-            if h_value[1] < game_deep:
-                del hboard[h]
         return best_move, int(best_score), count_moves, max_deep
 
     @staticmethod
     def alphabeta(chessboard, depth, a, b, maximizing):
-        global count_moves, deep, game_deep, hboard
+        global count_moves, deep, game_deep
+
         count_moves += 1
         if count_moves % 1000 == 0:
             print(count_moves)
@@ -168,9 +195,9 @@ class AI:
                 copy = board.Board.clone(chessboard)
                 copy.perform_move(move)
                 hash_board = copy.get_hash_board(maximazing_player=True, depth=deep - depth + game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    best_score = max(best_score, score)
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    best_score = max(best_score, cached_score)
                     a = max(a, best_score)
                     if b <= a:
                         break
@@ -182,7 +209,7 @@ class AI:
                         break
                     else:
                         curr_depth = deep - depth + game_deep
-                        hboard[hash_board] = [score, curr_depth]
+                        store_position_hash(hash_board, score)
         else:
             best_score = np.inf
             possible_moves = chessboard.get_possible_moves(pieces.Piece.BLACK)
@@ -196,9 +223,9 @@ class AI:
                 copy.perform_move(move)
 
                 hash_board = copy.get_hash_board(maximazing_player=False, depth=deep - depth + game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    best_score = min(best_score, score)
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    best_score = min(best_score, cached_score)
                     b = min(b, best_score)
                     if b <= a:
                         break
@@ -210,13 +237,13 @@ class AI:
                         break
                     else:
                         curr_depth = deep - depth + game_deep
-                        hboard[hash_board] = [score, curr_depth]
-
+                        store_position_hash(hash_board, score)
         return best_score
 
     @staticmethod
     def quiesce(chessboard, alpha, beta, maximizing, depth=0):
-        global count_moves, deep, game_deep, max_deep, hboard
+        global count_moves, deep, game_deep, max_deep
+
         count_moves += 1
         if count_moves % 1000 == 0:
             print(count_moves)
@@ -237,9 +264,9 @@ class AI:
                 copy.perform_move(move)
                 max_deep = max(max_deep, deep + depth)
                 hash_board = copy.get_hash_board(maximazing_player=True, depth=deep + depth + game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    alpha = max(alpha, score)
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    alpha = max(alpha, cached_score)
                     if alpha >= beta:
                         break
                 else:
@@ -249,7 +276,7 @@ class AI:
                         break
                     else:
                         curr_depth = deep + depth + game_deep
-                        hboard[hash_board] = [score, curr_depth]
+                        store_position_hash(hash_board, score)
             return alpha
         else:
             if stand_pat <= alpha:
@@ -267,9 +294,9 @@ class AI:
                 copy.perform_move(move)
                 max_deep = max(max_deep, deep + depth)
                 hash_board = copy.get_hash_board(maximazing_player=False, depth=deep + depth + game_deep)
-                if hash_board in hboard:
-                    score, _ = hboard[hash_board]
-                    beta = min(beta, score)
+                cached_score = get_position_score(hash_board)
+                if cached_score is not None:
+                    beta = min(beta, cached_score)
                     if beta <= alpha:
                         break
                 else:
@@ -279,8 +306,7 @@ class AI:
                         break
                     else:
                         curr_depth = deep + depth + game_deep
-                        hboard[hash_board] = [score, curr_depth]
-
+                        store_position_hash(hash_board, score)
             return beta
 
     @staticmethod
